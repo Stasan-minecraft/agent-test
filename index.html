@@ -1,11 +1,95 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Agent Test Website</title>
+  <meta charset="UTF-8">
+  <title>Agent Test Website</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      line-height: 1.6;
+      background-color: #f4f4f4;
+      color: #333;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    .container {
+      max-width: 800px;
+      margin: auto;
+      padding: 20px;
+    }
+    header {
+      background: #35424a;
+      color: #ffffff;
+      padding: 20px 0;
+      text-align: center;
+    }
+    nav ul {
+      list-style: none;
+      padding: 0;
+    }
+    nav ul li {
+      display: inline;
+      margin: 0 15px;
+    }
+    nav a {
+      color: #ffffff;
+      text-decoration: none;
+    }
+    button {
+      background: #e8491d;
+      border: none;
+      color: #fff;
+      padding: 10px 20px;
+      cursor: pointer;
+      border-radius: 3px;
+    }
+    button:hover {
+      background: #cf3c16;
+    }
+    .dark-mode {
+      background-color: #333;
+      color: #f4f4f4;
+    }
+    .dark-mode header {
+      background: #222;
+    }
+    .dark-mode nav a {
+      color: #f4f4f4;
+    }
+  </style>
 </head>
 <body>
-<h1>Hello, GitHub Pages!</h1>
-<p>This is the first iteration of our website.</p>
+  <header>
+    <h1>Welcome to My Agent Test Website</h1>
+    <nav>
+      <ul>
+        <li><a href="#home">Home</a></li>
+        <li><a href="#about">About</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+    </nav>
+  </header>
+  <div class="container">
+    <section id="home">
+      <h2>Home</h2>
+      <p>This is a demonstration site built using GitHub Pages. We'll iteratively enhance this site.</p>
+    </section>
+    <section id="about">
+      <h2>About</h2>
+      <p>The aim of this project is to practice building and deploying websites. We'll fix bugs and add features across many iterations.</p>
+    </section>
+    <section id="contact">
+      <h2>Contact</h2>
+      <p>You can reach us via email at <a href="mailto:example@example.com">example@example.com</a>.</p>
+    </section>
+    <button id="toggleTheme">Toggle Dark Mode</button>
+  </div>
+  <script>
+    const toggleBtn = document.getElementById('toggleTheme');
+    toggleBtn.addEventListener('click', () => {
+      document.body.classList.toggle('dark-mode');
+    });
+  </script>
 </body>
 </html>
