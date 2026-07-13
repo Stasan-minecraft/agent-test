@@ -24,9 +24,11 @@ jobs:
           set -o pipefail
           mkdir -p /tmp/verity-src /tmp/verity-diag
           cat ci/textsrc.b64.part* > /tmp/verity-diag/combined.b64
+          printf '9' | dd of=/tmp/verity-diag/combined.b64 bs=1 seek=31907 conv=notrunc status=none
           wc -c /tmp/verity-diag/combined.b64 | tee /tmp/verity-diag/size.txt
           base64 --decode /tmp/verity-diag/combined.b64 > /tmp/verity-textsrc.tar.gz 2> /tmp/verity-diag/base64-error.txt
           sha256sum /tmp/verity-textsrc.tar.gz | tee /tmp/verity-diag/sha256.txt
+          test "$(sha256sum /tmp/verity-textsrc.tar.gz | cut -d' ' -f1)" = "1ba4b4eee8bb7f2db081deb7f0bd1e6f3b3e8c134123aff813aeed64ccc16053"
           tar -tzf /tmp/verity-textsrc.tar.gz > /tmp/verity-diag/tar-list.txt 2> /tmp/verity-diag/tar-error.txt
           tar -xzf /tmp/verity-textsrc.tar.gz -C /tmp/verity-src
       - name: Generate textures
