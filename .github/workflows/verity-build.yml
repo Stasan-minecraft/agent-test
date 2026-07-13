@@ -1,8 +1,6 @@
 name: Build VERITY 0.6.0
 
 on:
-  push:
-    branches: ["verity-build-0.6.0"]
   workflow_dispatch:
 
 jobs:
@@ -21,19 +19,23 @@ jobs:
       - name: Restore source archive
         shell: bash
         run: |
-          cat ci/verity-src.b64.part* | base64 --decode > /tmp/verity-source.zip
-          mkdir -p /tmp/verity
-          unzip -q /tmp/verity-source.zip -d /tmp/verity
+          mkdir -p /tmp/verity-src
+          cat ci/textsrc.b64.part* | base64 --decode > /tmp/verity-textsrc.tar.gz
+          tar -xzf /tmp/verity-textsrc.tar.gz -C /tmp/verity-src
+          mkdir -p /tmp/verity-src/src/main/resources/assets/morrow/textures/entity
+          cat ci/verity-png.b64.part* | base64 --decode > /tmp/verity-src/src/main/resources/assets/morrow/textures/entity/verity.png
+          cat ci/box-png.b64.part* | base64 --decode > /tmp/verity-src/src/main/resources/assets/morrow/textures/entity/verity_box.png
+          cat ci/logo-png.b64.part* | base64 --decode > /tmp/verity-src/src/main/resources/logo.png
       - name: Build Forge mod
         shell: bash
         run: |
-          cd /tmp/verity/VERITY-Blue-Circle-0.6.0-src
+          cd /tmp/verity-src
           gradle clean build --stacktrace
       - name: Prepare artifact
         shell: bash
         run: |
           mkdir -p artifact
-          cp /tmp/verity/VERITY-Blue-Circle-0.6.0-src/build/libs/*.jar artifact/VERITY-Blue-Circle-0.6.0-Forge-1.20.1.jar
+          cp /tmp/verity-src/build/libs/*.jar artifact/VERITY-Blue-Circle-0.6.0-Forge-1.20.1.jar
       - uses: actions/upload-artifact@v4
         with:
           name: VERITY-Blue-Circle-0.6.0-Forge-1.20.1
