@@ -1,0 +1,41 @@
+name: Build VERITY 0.6.0
+
+on:
+  push:
+    branches: ["verity-build-0.6.0"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.8"
+      - name: Restore source archive
+        shell: bash
+        run: |
+          cat ci/verity-src.b64.part* | base64 --decode > /tmp/verity-source.zip
+          mkdir -p /tmp/verity
+          unzip -q /tmp/verity-source.zip -d /tmp/verity
+      - name: Build Forge mod
+        shell: bash
+        run: |
+          cd /tmp/verity/VERITY-Blue-Circle-0.6.0-src
+          gradle clean build --stacktrace
+      - name: Prepare artifact
+        shell: bash
+        run: |
+          mkdir -p artifact
+          cp /tmp/verity/VERITY-Blue-Circle-0.6.0-src/build/libs/*.jar artifact/VERITY-Blue-Circle-0.6.0-Forge-1.20.1.jar
+      - uses: actions/upload-artifact@v4
+        with:
+          name: VERITY-Blue-Circle-0.6.0-Forge-1.20.1
+          path: artifact/VERITY-Blue-Circle-0.6.0-Forge-1.20.1.jar
+          if-no-files-found: error
