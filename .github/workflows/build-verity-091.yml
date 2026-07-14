@@ -1,0 +1,105 @@
+name: Build VERITY 0.9.1
+
+on:
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.8"
+
+      - name: Restore VERITY 0.9.0 source
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/verity091 /tmp/verity091-diag
+          cat ci/verity090.b64.part* > /tmp/verity091-diag/source.b64
+          base64 --decode /tmp/verity091-diag/source.b64 > /tmp/verity091.tar.gz
+          test "$(sha256sum /tmp/verity091.tar.gz | cut -d' ' -f1)" = "95058898d5516b2cec3447e0bc8422c677d1182a4005b3db19456b9c4f919048"
+          tar -xzf /tmp/verity091.tar.gz -C /tmp/verity091
+
+      - name: Apply yellow minimalist visual update
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp overlay091/src/main/java/com/credesasq/morrow/client/MorrowModel.java \
+             /tmp/verity091/src/main/java/com/credesasq/morrow/client/MorrowModel.java
+          sed -i 's/mod_version=0.9.0/mod_version=0.9.1/' /tmp/verity091/gradle.properties
+          sed -i 's/mod_name=VERITY: Blue Circle/mod_name=VERITY: Yellow Circle/' /tmp/verity091/gradle.properties
+          python3 - <<'PY'
+          import math, os, struct, zlib
+          path='/tmp/verity091/src/main/resources/assets/morrow/textures/entity/verity.png'
+          w=h=128
+          rows=[]
+          for y in range(h):
+              row=bytearray()
+              for x in range(w):
+                  if y < 64:
+                      glow=max(0.0,1.0-math.hypot(x-42,y-18)/92.0)
+                      rgba=(int(232+20*glow),int(187+31*glow),int(18+12*glow),255)
+                  elif y < 80:
+                      rgba=(16,16,16,255)
+                  elif y < 96:
+                      rgba=(250,250,245,255)
+                  elif y < 112:
+                      rgba=(16,16,16,255)
+                  elif x < 96:
+                      rgba=(255,210,20,255)
+                  else:
+                      rgba=(190,22,30,255)
+                  row.extend(rgba)
+              rows.append(b'\x00'+bytes(row))
+          def chunk(t,d):
+              return struct.pack('>I',len(d))+t+d+struct.pack('>I',zlib.crc32(t+d)&0xffffffff)
+          png=b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('>IIBBBBB',w,h,8,6,0,0,0))+chunk(b'IDAT',zlib.compress(b''.join(rows),9))+chunk(b'IEND',b'')
+          os.makedirs(os.path.dirname(path),exist_ok=True)
+          open(path,'wb').write(png)
+          PY
+
+      - name: Build Forge mod
+        shell: bash
+        run: |
+          set -o pipefail
+          cd /tmp/verity091
+          gradle clean build --stacktrace --no-daemon 2>&1 | tee /tmp/verity091-diag/gradle.log
+
+      - name: Prepare and validate artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifact
+          JAR="$(find /tmp/verity091/build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' | head -n 1)"
+          test -n "$JAR"
+          cp "$JAR" artifact/VERITY-Yellow-Circle-0.9.1-Forge-1.20.1.jar
+          unzip -t artifact/VERITY-Yellow-Circle-0.9.1-Forge-1.20.1.jar | tee /tmp/verity091-diag/jar-test.txt
+          unzip -l artifact/VERITY-Yellow-Circle-0.9.1-Forge-1.20.1.jar | tee /tmp/verity091-diag/jar-files.txt
+          grep -q 'ClientSpeechController.class' /tmp/verity091-diag/jar-files.txt
+          grep -q 'VeritySpeechPacket.class' /tmp/verity091-diag/jar-files.txt
+          grep -q 'AiRuntime.class' /tmp/verity091-diag/jar-files.txt
+          grep -q 'MorrowModel.class' /tmp/verity091-diag/jar-files.txt
+          sha256sum artifact/VERITY-Yellow-Circle-0.9.1-Forge-1.20.1.jar | tee /tmp/verity091-diag/jar.sha256
+
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: VERITY-Yellow-Circle-0.9.1-Forge-1.20.1
+          path: artifact/VERITY-Yellow-Circle-0.9.1-Forge-1.20.1.jar
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: VERITY-0.9.1-build-diagnostics
+          path: /tmp/verity091-diag
+          if-no-files-found: warn
