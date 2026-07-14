@@ -101,6 +101,7 @@ jobs:
           test "$(sha256sum /tmp/verity130-overlay130.tar.gz | cut -d' ' -f1)" = "7d47c6bfc86339ae3796745a8de56922cd50c4c587caa8b67fc5bda9e3913ca1"
           tar -tzf /tmp/verity130-overlay130.tar.gz | tee /tmp/verity130-diag/overlay130-files.txt
           tar -xzf /tmp/verity130-overlay130.tar.gz -C /tmp/verity130
+          sed -i 's/verity\.serverLevel()/verity.level()/g' /tmp/verity130/src/main/java/com/credesasq/morrow/ai/NormalVerityManager.java
           grep -q '^mod_version=1.3.0$' /tmp/verity130/gradle.properties
           grep -q 'qwen2.5-1.5b-instruct-q4_k_m.gguf' /tmp/verity130/src/main/java/com/credesasq/morrow/ai/AiInstaller.java
           grep -q 'askConversation' /tmp/verity130/src/main/java/com/credesasq/morrow/ai/AiRuntime.java
