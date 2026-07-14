@@ -1,0 +1,147 @@
+name: Build VERITY 1.3.0
+
+on:
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.8"
+
+      - name: Restore VERITY 0.9.0 source
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/verity130 /tmp/verity130-diag
+          cat ci/verity090.b64.part* > /tmp/verity130-diag/source090.b64
+          base64 --decode /tmp/verity130-diag/source090.b64 > /tmp/verity130-base.tar.gz
+          test "$(sha256sum /tmp/verity130-base.tar.gz | cut -d' ' -f1)" = "95058898d5516b2cec3447e0bc8422c677d1182a4005b3db19456b9c4f919048"
+          tar -xzf /tmp/verity130-base.tar.gz -C /tmp/verity130
+
+      - name: Apply yellow minimalist visual update
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp overlay091/src/main/java/com/credesasq/morrow/client/MorrowModel.java \
+             /tmp/verity130/src/main/java/com/credesasq/morrow/client/MorrowModel.java
+          python3 - <<'PY'
+          import math, os, struct, zlib
+          path='/tmp/verity130/src/main/resources/assets/morrow/textures/entity/verity.png'
+          w=h=128
+          rows=[]
+          for y in range(h):
+              row=bytearray()
+              for x in range(w):
+                  if y < 64:
+                      glow=max(0.0,1.0-math.hypot(x-42,y-18)/92.0)
+                      rgba=(int(232+20*glow),int(187+31*glow),int(18+12*glow),255)
+                  elif y < 80: rgba=(16,16,16,255)
+                  elif y < 96: rgba=(250,250,245,255)
+                  elif y < 112: rgba=(16,16,16,255)
+                  elif x < 96: rgba=(255,210,20,255)
+                  else: rgba=(190,22,30,255)
+                  row.extend(rgba)
+              rows.append(b'\x00'+bytes(row))
+          def chunk(t,d):
+              return struct.pack('>I',len(d))+t+d+struct.pack('>I',zlib.crc32(t+d)&0xffffffff)
+          png=b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('>IIBBBBB',w,h,8,6,0,0,0))+chunk(b'IDAT',zlib.compress(b''.join(rows),9))+chunk(b'IEND',b'')
+          os.makedirs(os.path.dirname(path),exist_ok=True)
+          open(path,'wb').write(png)
+          PY
+
+      - name: Apply VERITY 1.0.1 playable companion overlay
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat ci/verity101-overlay.b64.part* > /tmp/verity130-diag/overlay101.b64
+          printf 'E' | dd of=/tmp/verity130-diag/overlay101.b64 bs=1 seek=555 conv=notrunc status=none
+          printf 'e' | dd of=/tmp/verity130-diag/overlay101.b64 bs=1 seek=31563 conv=notrunc status=none
+          printf 'e' | dd of=/tmp/verity130-diag/overlay101.b64 bs=1 seek=36132 conv=notrunc status=none
+          base64 --decode /tmp/verity130-diag/overlay101.b64 > /tmp/verity130-overlay101.tar.gz
+          test "$(sha256sum /tmp/verity130-overlay101.tar.gz | cut -d' ' -f1)" = "c655fd7f22ecfd41411d301fa33433dc8a74073fd4f526104760c2c01cdd5d8e"
+          tar -xzf /tmp/verity130-overlay101.tar.gz -C /tmp/verity130
+
+      - name: Apply VERITY 1.1.0 real AI and inventory fixes
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat ci/verity110-overlay.b64.part* > /tmp/verity130-diag/overlay110.b64
+          base64 --decode /tmp/verity130-diag/overlay110.b64 > /tmp/verity130-overlay110.tar.gz
+          test "$(sha256sum /tmp/verity130-overlay110.tar.gz | cut -d' ' -f1)" = "c83199a3dcfa32bef412fb94db5d99ecbe563b1458e455bff8fc5a9ccfc24dc0"
+          tar -xzf /tmp/verity130-overlay110.tar.gz -C /tmp/verity130
+
+      - name: Apply VERITY 1.2.0 real setup and voice repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat ci/verity120-overlay.b64.part* > /tmp/verity130-diag/overlay120.b64
+          base64 --decode /tmp/verity130-diag/overlay120.b64 > /tmp/verity130-overlay120.tar.gz
+          test "$(sha256sum /tmp/verity130-overlay120.tar.gz | cut -d' ' -f1)" = "0d52261b71f2c0da4582bc9fe90ef418146cd9641d9a628fae4c8dc91a6c59df"
+          tar -xzf /tmp/verity130-overlay120.tar.gz -C /tmp/verity130
+
+      - name: Apply VERITY 1.3.0 conversational AI and sphere update
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat ci/verity130-overlay.b64.part* > /tmp/verity130-diag/overlay130.b64
+          wc -c /tmp/verity130-diag/overlay130.b64 | tee /tmp/verity130-diag/overlay130-size.txt
+          base64 --decode /tmp/verity130-diag/overlay130.b64 > /tmp/verity130-overlay130.tar.gz
+          sha256sum /tmp/verity130-overlay130.tar.gz | tee /tmp/verity130-diag/overlay130.sha256
+          test "$(sha256sum /tmp/verity130-overlay130.tar.gz | cut -d' ' -f1)" = "7d47c6bfc86339ae3796745a8de56922cd50c4c587caa8b67fc5bda9e3913ca1"
+          tar -tzf /tmp/verity130-overlay130.tar.gz | tee /tmp/verity130-diag/overlay130-files.txt
+          tar -xzf /tmp/verity130-overlay130.tar.gz -C /tmp/verity130
+          grep -q '^mod_version=1.3.0$' /tmp/verity130/gradle.properties
+          grep -q 'qwen2.5-1.5b-instruct-q4_k_m.gguf' /tmp/verity130/src/main/java/com/credesasq/morrow/ai/AiInstaller.java
+          grep -q 'askConversation' /tmp/verity130/src/main/java/com/credesasq/morrow/ai/AiRuntime.java
+
+      - name: Build Forge mod
+        shell: bash
+        run: |
+          set -o pipefail
+          cd /tmp/verity130
+          gradle clean build --stacktrace --no-daemon 2>&1 | tee /tmp/verity130-diag/gradle.log
+
+      - name: Prepare and validate artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifact
+          JAR="$(find /tmp/verity130/build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' | head -n 1)"
+          test -n "$JAR"
+          cp "$JAR" artifact/VERITY-Smart-Local-AI-Sphere-1.3.0-Forge-1.20.1.jar
+          unzip -t artifact/VERITY-Smart-Local-AI-Sphere-1.3.0-Forge-1.20.1.jar | tee /tmp/verity130-diag/jar-test.txt
+          unzip -l artifact/VERITY-Smart-Local-AI-Sphere-1.3.0-Forge-1.20.1.jar | tee /tmp/verity130-diag/jar-files.txt
+          grep -q 'AiInstaller.class' /tmp/verity130-diag/jar-files.txt
+          grep -q 'AiRuntime.class' /tmp/verity130-diag/jar-files.txt
+          grep -q 'NormalVerityManager.class' /tmp/verity130-diag/jar-files.txt
+          grep -q 'MorrowModel.class' /tmp/verity130-diag/jar-files.txt
+          grep -q 'ClientSpeechController.class' /tmp/verity130-diag/jar-files.txt
+          grep -q 'VerityCompanionItem.class' /tmp/verity130-diag/jar-files.txt
+          grep -q 'assets/morrow/textures/entity/verity_box.png' /tmp/verity130-diag/jar-files.txt
+          grep -q 'assets/morrow/textures/item/verity_companion.png' /tmp/verity130-diag/jar-files.txt
+          sha256sum artifact/VERITY-Smart-Local-AI-Sphere-1.3.0-Forge-1.20.1.jar | tee /tmp/verity130-diag/jar.sha256
+
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: VERITY-Smart-Local-AI-Sphere-1.3.0-Forge-1.20.1
+          path: artifact/VERITY-Smart-Local-AI-Sphere-1.3.0-Forge-1.20.1.jar
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: VERITY-1.3.0-build-diagnostics
+          path: /tmp/verity130-diag
+          if-no-files-found: warn
