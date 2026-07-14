@@ -27,6 +27,14 @@ jobs:
           set -euo pipefail
           mkdir -p /tmp/verity080 /tmp/verity080-diag
           cat ci/verity080.b64.part* > /tmp/verity080-diag/source.b64
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('/tmp/verity080-diag/source.b64')
+          data = path.read_bytes()
+          data = data[:11709] + b'R' + data[11709:]
+          path.write_bytes(data)
+          PY
+          test "$(wc -c < /tmp/verity080-diag/source.b64)" = "70792"
           base64 --decode /tmp/verity080-diag/source.b64 > /tmp/verity080-textsrc.tar.gz
           sha256sum /tmp/verity080-textsrc.tar.gz | tee /tmp/verity080-diag/source.sha256
           test "$(sha256sum /tmp/verity080-textsrc.tar.gz | cut -d' ' -f1)" = "7fb7271f0f4453b2c1677d26d625d64f256d42367280989c6ff6b262cc6beb3d"
