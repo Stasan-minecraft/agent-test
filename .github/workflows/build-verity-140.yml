@@ -104,7 +104,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cat ci/verity140-overlay.b64.part* > /tmp/verity140-diag/overlay140.b64
+          cat ci/verity140-safe.part* > /tmp/verity140-diag/overlay140.b64
           wc -c /tmp/verity140-diag/overlay140.b64 | tee /tmp/verity140-diag/overlay140-size.txt
           test "$(wc -c < /tmp/verity140-diag/overlay140.b64)" = "38964"
           base64 --decode /tmp/verity140-diag/overlay140.b64 > /tmp/verity140-overlay140.tar.gz
