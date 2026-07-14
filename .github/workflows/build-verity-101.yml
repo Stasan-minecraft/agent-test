@@ -70,6 +70,9 @@ jobs:
         run: |
           set -euo pipefail
           cat ci/verity101-overlay.b64.part* > /tmp/verity101-diag/overlay.b64
+          printf 'E' | dd of=/tmp/verity101-diag/overlay.b64 bs=1 seek=555 conv=notrunc status=none
+          printf 'e' | dd of=/tmp/verity101-diag/overlay.b64 bs=1 seek=31563 conv=notrunc status=none
+          printf 'e' | dd of=/tmp/verity101-diag/overlay.b64 bs=1 seek=36132 conv=notrunc status=none
           base64 --decode /tmp/verity101-diag/overlay.b64 > /tmp/verity101-overlay.tar.gz
           sha256sum /tmp/verity101-overlay.tar.gz | tee /tmp/verity101-diag/overlay.sha256
           test "$(sha256sum /tmp/verity101-overlay.tar.gz | cut -d' ' -f1)" = "c655fd7f22ecfd41411d301fa33433dc8a74073fd4f526104760c2c01cdd5d8e"
