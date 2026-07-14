@@ -1,0 +1,118 @@
+name: Build VERITY 0.8.0
+
+on:
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.8"
+
+      - name: Restore VERITY 0.8.0 source
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/verity080 /tmp/verity080-diag
+          cat ci/verity080.b64.part* > /tmp/verity080-diag/source.b64
+          base64 --decode /tmp/verity080-diag/source.b64 > /tmp/verity080-textsrc.tar.gz
+          sha256sum /tmp/verity080-textsrc.tar.gz | tee /tmp/verity080-diag/source.sha256
+          test "$(sha256sum /tmp/verity080-textsrc.tar.gz | cut -d' ' -f1)" = "7fb7271f0f4453b2c1677d26d625d64f256d42367280989c6ff6b262cc6beb3d"
+          tar -tzf /tmp/verity080-textsrc.tar.gz > /tmp/verity080-diag/source-files.txt
+          tar -xzf /tmp/verity080-textsrc.tar.gz -C /tmp/verity080
+
+      - name: Generate entity textures
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import math, os, struct, zlib
+
+          def save(path, w, h, pixel):
+              os.makedirs(os.path.dirname(path), exist_ok=True)
+              rows = []
+              for y in range(h):
+                  row = bytearray()
+                  for x in range(w):
+                      row.extend(pixel(x, y))
+                  rows.append(b'\x00' + bytes(row))
+              def chunk(kind, data):
+                  return (struct.pack('>I', len(data)) + kind + data +
+                          struct.pack('>I', zlib.crc32(kind + data) & 0xffffffff))
+              png = (b'\x89PNG\r\n\x1a\n' +
+                     chunk(b'IHDR', struct.pack('>IIBBBBB', w, h, 8, 6, 0, 0, 0)) +
+                     chunk(b'IDAT', zlib.compress(b''.join(rows), 9)) +
+                     chunk(b'IEND', b''))
+              with open(path, 'wb') as f:
+                  f.write(png)
+
+          root = '/tmp/verity080/src/main/resources/assets/morrow/textures/entity'
+
+          def verity(x, y):
+              if y >= 112:
+                  return (220, 38, 58, 255) if x >= 96 else ((255, 105, 160, 255) if x >= 64 else (80, 225, 255, 255))
+              if y >= 96:
+                  return (9, 18, 38, 255)
+              if y >= 80:
+                  return (248, 252, 255, 255)
+              if y >= 64:
+                  return (3, 7, 16, 255)
+              glow = max(0.0, 1.0 - math.hypot(x - 50, y - 28) / 85.0)
+              return (int(20 + 25 * glow), int(105 + 65 * glow), int(210 + 45 * glow), 255)
+
+          def box(x, y):
+              plank = (y // 16) % 2
+              if x % 32 < 3 or y % 16 < 2:
+                  return (68, 38, 23, 255)
+              if 58 < x < 70 or 58 < y < 70:
+                  return (104, 116, 128, 255)
+              return (126 + plank * 18, 72 + plank * 10, 38 + plank * 5, 255)
+
+          save(root + '/verity.png', 128, 128, verity)
+          save(root + '/verity_box.png', 128, 128, box)
+          PY
+
+      - name: Build Forge mod
+        shell: bash
+        run: |
+          set -o pipefail
+          cd /tmp/verity080
+          gradle clean build --stacktrace --no-daemon 2>&1 | tee /tmp/verity080-diag/gradle.log
+
+      - name: Prepare and validate artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifact
+          JAR="$(find /tmp/verity080/build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' | head -n 1)"
+          test -n "$JAR"
+          cp "$JAR" artifact/VERITY-Blue-Circle-0.8.0-Forge-1.20.1.jar
+          unzip -t artifact/VERITY-Blue-Circle-0.8.0-Forge-1.20.1.jar | tee /tmp/verity080-diag/jar-test.txt
+          unzip -l artifact/VERITY-Blue-Circle-0.8.0-Forge-1.20.1.jar | tee /tmp/verity080-diag/jar-files.txt
+          sha256sum artifact/VERITY-Blue-Circle-0.8.0-Forge-1.20.1.jar | tee /tmp/verity080-diag/jar.sha256
+
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: VERITY-Blue-Circle-0.8.0-Forge-1.20.1
+          path: artifact/VERITY-Blue-Circle-0.8.0-Forge-1.20.1.jar
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: VERITY-0.8.0-build-diagnostics
+          path: /tmp/verity080-diag
+          if-no-files-found: warn
