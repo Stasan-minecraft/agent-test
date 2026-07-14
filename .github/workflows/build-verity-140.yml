@@ -105,6 +105,7 @@ jobs:
         run: |
           set -euo pipefail
           cat ci/verity140-safe.part* > /tmp/verity140-diag/overlay140.b64
+          printf 'ni' | dd of=/tmp/verity140-diag/overlay140.b64 bs=1 seek=9682 conv=notrunc status=none
           wc -c /tmp/verity140-diag/overlay140.b64 | tee /tmp/verity140-diag/overlay140-size.txt
           test "$(wc -c < /tmp/verity140-diag/overlay140.b64)" = "38964"
           base64 --decode /tmp/verity140-diag/overlay140.b64 > /tmp/verity140-overlay140.tar.gz
