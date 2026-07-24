@@ -1,0 +1,1 @@
+{"name":"tank-arena-online","version":"2.0.0","type":"module","private":true,"scripts":{"test":"node core.test.mjs","serve":"python3 -m http.server 4173"}}

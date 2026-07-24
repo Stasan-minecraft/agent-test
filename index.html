@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+  <meta name="theme-color" content="#10192b" />
+  <meta name="description" content="Tank Arena Online — кросплатформна артилерійська гра для телефона і ПК." />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="./styles.css" />
+  <title>Tank Arena Online</title>
+</head>
+<body>
+  <div id="app">
+    <section id="menu" class="screen active">
+      <div class="menu-bg" aria-hidden="true"><div class="sun"></div><div class="hill h1"></div><div class="hill h2"></div></div>
+      <main class="menu-card glass">
+        <div class="brand-row">
+          <img src="./icon.svg" class="brand-icon" alt="" />
+          <div><h1>TANK ARENA</h1><p>ONLINE <span class="version">2.0.0</span></p></div>
+        </div>
+        <label class="field">Нікнейм<input id="nickname" maxlength="16" autocomplete="nickname" placeholder="CREDESASQ" /></label>
+        <div class="menu-buttons">
+          <button id="soloBtn" class="primary big">🤖 Грати проти ШІ</button>
+          <button id="createBtn" class="accent big">🌐 Створити онлайн-кімнату</button>
+          <div class="join-row"><input id="roomCode" maxlength="6" placeholder="КОД" inputmode="text" /><button id="joinBtn">Приєднатися</button></div>
+          <button id="howBtn" class="ghost">Як грати</button>
+          <button id="settingsBtn" class="ghost">Налаштування</button>
+        </div>
+        <div class="tiny-links"><a href="./privacy.html">Конфіденційність</a><a href="./support.html">Підтримка</a></div>
+      </main>
+    </section>
+
+    <section id="lobby" class="screen">
+      <div class="modal-card glass lobby-card">
+        <button class="close-btn" data-back-menu>×</button>
+        <h2>Онлайн-кімната</h2>
+        <p id="lobbyStatus">Підключення…</p>
+        <div class="room-code-wrap"><span>Код кімнати</span><strong id="lobbyCode">------</strong><button id="copyCodeBtn">Копіювати</button></div>
+        <div class="players">
+          <div class="player-slot"><span class="dot host"></span><b id="hostName">Господар</b><small>HOST</small></div>
+          <div class="vs">VS</div>
+          <div class="player-slot"><span class="dot guest"></span><b id="guestName">Очікування…</b><small>GUEST</small></div>
+        </div>
+        <button id="readyBtn" class="primary big" disabled>Готовий</button>
+        <p class="lobby-tip">Відкрийте веб-версію або APK на іншому пристрої та введіть цей код.</p>
+      </div>
+    </section>
+
+    <section id="game" class="screen game-screen">
+      <canvas id="gameCanvas" width="1600" height="900"></canvas>
+      <div id="rotateHint">🔄 Поверніть телефон горизонтально</div>
+      <div class="top-hud">
+        <div class="tank-card blue"><div><b id="p1Name">Гравець</b><span id="p1HpText">100 HP</span></div><div class="hp"><i id="p1Hp"></i></div></div>
+        <div class="center-hud"><b id="turnLabel">Ваш хід</b><span id="windLabel">Вітер 0</span><span id="timerLabel">30</span><span id="networkLabel" class="online">● SOLO</span></div>
+        <div class="tank-card red"><div><b id="p2Name">Суперник</b><span id="p2HpText">100 HP</span></div><div class="hp"><i id="p2Hp"></i></div></div>
+      </div>
+      <div id="toast" class="toast"></div>
+      <div id="combatLog" class="combat-log"></div>
+
+      <div class="battle-controls glass">
+        <div class="move-box"><span>ПАЛЬНЕ</span><div class="fuel"><i id="fuelBar"></i></div><div class="move-buttons"><button id="moveLeft" aria-label="Рух ліворуч">◀</button><button id="moveRight" aria-label="Рух праворуч">▶</button></div></div>
+        <div class="aim-box">
+          <label>Кут <output id="angleOut">45°</output><input id="angle" type="range" min="5" max="175" value="45" /></label>
+          <label>Сила <output id="powerOut">65%</output><input id="power" type="range" min="20" max="100" value="65" /></label>
+        </div>
+        <button id="fireBtn" class="fire-btn">ВОГОНЬ<br><span>🔥</span></button>
+      </div>
+      <div id="ammoBar" class="ammo-bar glass"></div>
+      <button id="leaveGameBtn" class="leave-game">☰</button>
+      <div id="pausePanel" class="pause-panel glass hidden"><h3>Пауза</h3><button id="resumeBtn">Продовжити</button><button id="restartBtn">Новий матч</button><button id="exitBtn">Вийти в меню</button></div>
+    </section>
+
+    <dialog id="howDialog"><button class="dialog-close">×</button><h2>Як грати</h2><p>Рухайтесь ліворуч/праворуч, поки є пальне. Виберіть патрон, налаштуйте кут і силу. Пунктир показує приблизну траєкторію з урахуванням вітру. Підбирайте аірдропи, руйнуйте землю і переможіть суперника.</p><p><b>ПК:</b> A/D або ←/→, W/S змінюють кут, пробіл — постріл.</p><p><b>Телефон:</b> утримуйте кнопки руху, використовуйте повзунки та натискайте «Вогонь».</p></dialog>
+    <dialog id="settingsDialog"><button class="dialog-close">×</button><h2>Налаштування</h2><label><input id="soundToggle" type="checkbox" checked /> Звуки</label><label><input id="vibrationToggle" type="checkbox" checked /> Вібрація</label><label><input id="contrastToggle" type="checkbox" /> Контрастна траєкторія</label><label><input id="reducedMotionToggle" type="checkbox" /> Менше анімацій</label></dialog>
+  </div>
+  <script type="module" src="./game.js"></script>
+</body>
+</html>
