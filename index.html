@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+  <meta name="theme-color" content="#17153f" />
+  <meta name="description" content="Tank Arena Classic — оригінальна артилерійська гра для Android, ПК і браузера." />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/styles.css" />
+  <title>Tank Arena Classic</title>
+</head>
+<body>
+<div id="app">
+  <section id="menu" class="screen active classic-scene">
+    <div class="stars"></div><div class="moon"></div><div class="mountain back"></div><div class="mountain front"></div><div class="ground"></div>
+    <div class="menu-tank tank-left" aria-hidden="true"><i></i><b></b><span></span></div>
+    <div class="menu-tank tank-right" aria-hidden="true"><i></i><b></b><span></span></div>
+    <main class="classic-menu">
+      <div class="logo-badge">
+        <span class="logo-kicker">CREDESASQ GAMES</span>
+        <h1>TANK</h1><h2>ARENA</h2>
+        <p>БИТВА ПОЧИНАЄТЬСЯ</p>
+      </div>
+      <label class="nick-label">ІМ’Я ГРАВЦЯ<input id="nickname" maxlength="16" autocomplete="nickname" placeholder="CREDESASQ" /></label>
+      <button id="playBtn" class="classic-btn orange"><span>▶</span> ГРАТИ</button>
+      <button id="multiBtn" class="classic-btn purple"><span>🌐</span> МУЛЬТИПЛЕЄР <em>BETA</em></button>
+      <button id="garageBtn" class="classic-btn blue"><span>▣</span> ГАРАЖ</button>
+      <button id="settingsBtn" class="classic-btn dark"><span>⚙</span> НАЛАШТУВАННЯ</button>
+      <button id="helpBtn" class="round-help">?</button>
+      <small class="version">CLASSIC 3.0.0 • WEB NATIVE CANVAS</small>
+    </main>
+  </section>
+
+  <section id="mode" class="screen classic-scene sub-screen">
+    <div class="stars"></div><div class="moon"></div><div class="mountain back"></div><div class="mountain front"></div><div class="ground"></div>
+    <main class="panel classic-panel">
+      <button class="back-btn" data-back="menu">←</button>
+      <h2>ВИБЕРИ БІЙ</h2>
+      <p>Та сама класична Tank Arena — без зміни старої атмосфери.</p>
+      <button id="easyBtn" class="classic-btn blue">🤖 ЛЕГКИЙ БОТ</button>
+      <button id="normalBtn" class="classic-btn orange">🎯 НОРМАЛЬНИЙ БОТ</button>
+      <button id="hardBtn" class="classic-btn red">🔥 СКЛАДНИЙ БОТ</button>
+    </main>
+  </section>
+
+  <section id="multiplayer" class="screen classic-scene sub-screen">
+    <div class="stars"></div><div class="moon"></div><div class="mountain back"></div><div class="mountain front"></div><div class="ground"></div>
+    <main class="panel classic-panel">
+      <button class="back-btn" data-back="menu">←</button>
+      <h2>МУЛЬТИПЛЕЄР</h2>
+      <p>Android ↔ браузер ↔ ПК. Створіть кімнату або введіть код друга.</p>
+      <button id="createBtn" class="classic-btn orange">＋ СТВОРИТИ КІМНАТУ</button>
+      <div class="join-box"><input id="roomCode" maxlength="6" placeholder="КОД КІМНАТИ" autocomplete="off" /><button id="joinBtn" class="classic-btn purple">УВІЙТИ</button></div>
+      <div class="server-note"><i id="serverDot"></i><span id="serverText">Онлайн-сервер готовий</span></div>
+    </main>
+  </section>
+
+  <section id="lobby" class="screen classic-scene sub-screen">
+    <div class="stars"></div><div class="moon"></div><div class="mountain back"></div><div class="mountain front"></div><div class="ground"></div>
+    <main class="panel classic-panel lobby-panel">
+      <button id="leaveLobbyBtn" class="back-btn">←</button>
+      <h2>КІМНАТА <strong id="lobbyCode">------</strong></h2>
+      <p id="lobbyStatus">Підключення…</p>
+      <div class="player-row">
+        <div class="player-card blue-card"><div class="mini-tank blue-mini"></div><b id="hostName">Очікування…</b><small>ГРАВЕЦЬ 1</small><span id="hostState">НЕ ГОТОВИЙ</span></div>
+        <div class="versus">VS</div>
+        <div class="player-card red-card"><div class="mini-tank red-mini"></div><b id="guestName">Очікування…</b><small>ГРАВЕЦЬ 2</small><span id="guestState">НЕМАЄ</span></div>
+      </div>
+      <div class="lobby-actions"><button id="copyCodeBtn" class="classic-btn blue">КОПІЮВАТИ КОД</button><button id="readyBtn" class="classic-btn orange" disabled>Я ГОТОВИЙ</button></div>
+      <p class="tiny">Стан кімнати зберігається під час короткого перепідключення.</p>
+    </main>
+  </section>
+
+  <section id="garage" class="screen classic-scene sub-screen">
+    <div class="stars"></div><div class="moon"></div><div class="mountain back"></div><div class="mountain front"></div><div class="ground"></div>
+    <main class="panel classic-panel wide-panel">
+      <button class="back-btn" data-back="menu">←</button>
+      <h2>ГАРАЖ</h2><p>Вигляд танка зберігається на цьому пристрої.</p>
+      <div id="tankCards" class="tank-cards"></div>
+    </main>
+  </section>
+
+  <section id="settings" class="screen classic-scene sub-screen">
+    <div class="stars"></div><div class="moon"></div><div class="mountain back"></div><div class="mountain front"></div><div class="ground"></div>
+    <main class="panel classic-panel settings-panel">
+      <button class="back-btn" data-back="menu">←</button>
+      <h2>НАЛАШТУВАННЯ</h2>
+      <label><span>Звуки</span><input id="soundToggle" type="checkbox" /></label>
+      <label><span>Вібрація</span><input id="vibrationToggle" type="checkbox" /></label>
+      <label><span>Контрастна траєкторія</span><input id="contrastToggle" type="checkbox" /></label>
+      <label><span>Менше анімацій</span><input id="motionToggle" type="checkbox" /></label>
+      <label><span>Якість частинок</span><select id="qualitySelect"><option value="low">Низька</option><option value="medium">Середня</option><option value="high">Висока</option></select></label>
+    </main>
+  </section>
+
+  <section id="game" class="screen game-screen">
+    <div id="canvasWrap"><canvas id="gameCanvas" width="1600" height="900"></canvas></div>
+    <div id="rotateHint"><b>↻</b><span>ПОВЕРНІТЬ ТЕЛЕФОН<br>ГОРИЗОНТАЛЬНО</span></div>
+    <div class="battle-top">
+      <div class="health-card player"><b id="p1Name">Гравець</b><span id="p1HpText">100 HP</span><div><i id="p1Hp"></i></div></div>
+      <div class="turn-card"><b id="turnLabel">ВАШ ХІД</b><span id="windLabel">ВІТЕР 0</span><strong id="timerLabel">35</strong><small id="networkLabel">SOLO</small></div>
+      <div class="health-card enemy"><b id="p2Name">Суперник</b><span id="p2HpText">100 HP</span><div><i id="p2Hp"></i></div></div>
+    </div>
+    <button id="pauseBtn" class="pause-btn">Ⅱ</button>
+    <div id="toast" class="toast"></div>
+    <div id="combatLog" class="combat-log"></div>
+    <div id="ammoBar" class="ammo-bar"></div>
+    <div class="battle-bottom">
+      <div class="move-panel"><b>ПАЛЬНЕ</b><div class="fuel"><i id="fuelBar"></i></div><div><button id="moveLeft">◀</button><button id="moveRight">▶</button></div></div>
+      <div class="aim-panel"><label>КУТ <output id="angleOut">45°</output><input id="angle" type="range" min="5" max="175" value="45" /></label><label>СИЛА <output id="powerOut">65%</output><input id="power" type="range" min="20" max="100" value="65" /></label></div>
+      <button id="fireBtn" class="fire-btn"><span>🔥</span>ВОГОНЬ</button>
+    </div>
+    <div id="pausePanel" class="pause-overlay hidden"><div class="panel classic-panel"><h2>ПАУЗА</h2><button id="resumeBtn" class="classic-btn orange">ПРОДОВЖИТИ</button><button id="restartBtn" class="classic-btn blue">НОВИЙ БІЙ</button><button id="exitBtn" class="classic-btn dark">ВИЙТИ В МЕНЮ</button></div></div>
+  </section>
+
+  <dialog id="helpDialog"><button class="dialog-x">×</button><h2>ЯК ГРАТИ</h2><p>Рухайтесь ліворуч і праворуч, поки є пальне. Пунктир показує приблизну траєкторію. Обирайте патрони внизу, підбирайте аірдропи та знищіть суперника.</p><p><b>ПК:</b> A/D або стрілки — рух, W/S — кут, пробіл — вогонь.</p><p><b>Телефон:</b> утримуйте ◀/▶, рухайте повзунки та натискайте «ВОГОНЬ».</p></dialog>
+</div>
+<script type="module" src="/game.js"></script>
+</body>
+</html>
