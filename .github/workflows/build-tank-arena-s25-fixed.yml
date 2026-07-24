@@ -17,11 +17,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Restore source archive
+      - name: Restore and patch source archive
         shell: bash
         run: |
           cat tank-arena-source.b64.part-* | base64 --decode > source.tar.gz
           tar -xzf source.tar.gz
+          sed -i '/android:postSplashScreenTheme/d' tank-arena-android/app/src/main/res/values-v31/styles.xml
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
