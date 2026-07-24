@@ -1,0 +1,112 @@
+name: Build Tank Arena Classic v3
+
+on:
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Restore complete source
+        shell: bash
+        run: |
+          cat classic-v3/classicv3.part-* | base64 --decode > tank-arena-classic-v3-source.tar.gz
+          mkdir source
+          tar -xzf tank-arena-classic-v3-source.tar.gz -C source
+          test -f source/android/app/src/main/java/com/credesasq/tankarena/GameView.java
+          test -f source/public/game.js
+
+      - name: Set up Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Test deterministic game core
+        working-directory: source
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import {createState,moveTank,simulateTrajectory,selectAmmo,fire,validateAction,packState,unpackState,terrainY} from './lib/core.mjs';
+          const a=createState(12345,['A','B']);
+          const b=createState(12345,['A','B']);
+          assert.deepEqual(a.terrain,b.terrain);
+          const x=a.tanks[0].x, fuel=a.tanks[0].fuel;
+          moveTank(a,0,1,0.1);
+          assert.ok(a.tanks[0].x>x);
+          assert.ok(a.tanks[0].fuel<fuel);
+          const path=simulateTrajectory(a,a.tanks[0],'standard');
+          assert.ok(path.length>5);
+          assert.ok(path.at(-1).y>=0 && path.at(-1).y<=900);
+          assert.equal(validateAction(a,1,{type:'fire'}),false);
+          assert.equal(selectAmmo(a,0,'heavy'),true);
+          assert.equal(fire(a,0),true);
+          const restored=unpackState(packState(a));
+          assert.equal(restored.version,'3.0.0');
+          assert.equal(Math.round(terrainY(restored,400)),Math.round(terrainY(a,400)));
+          console.log('Tank Arena core tests passed');
+          NODE
+          node --check public/game.js
+          node --check api/ws.js
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android 16 SDK
+        shell: bash
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Set up Gradle 8.13
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
+      - name: Build native APK and Play Store AAB
+        working-directory: source/android
+        shell: bash
+        run: gradle :app:assembleRelease :app:bundleRelease --stacktrace --no-daemon
+
+      - name: Verify Android package
+        shell: bash
+        run: |
+          APK="source/android/app/build/outputs/apk/release/app-release.apk"
+          AAB="source/android/app/build/outputs/bundle/release/app-release.aab"
+          test -s "$APK"
+          test -s "$AAB"
+          "$ANDROID_HOME/build-tools/36.0.0/aapt2" dump badging "$APK" | tee apk-badging.txt
+          grep -q "package: name='com.credesasq.tankarena'" apk-badging.txt
+          grep -q "launchable-activity:" apk-badging.txt
+          grep -q "application-icon-" apk-badging.txt
+          "$ANDROID_HOME/build-tools/36.0.0/zipalign" -c -P 16 -v 4 "$APK"
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs "$APK" | tee apk-signature.txt
+          mkdir -p deliverables
+          cp "$APK" deliverables/Tank-Arena-Classic-3.0.0.apk
+          cp "$AAB" deliverables/Tank-Arena-Classic-3.0.0.aab
+          cp tank-arena-classic-v3-source.tar.gz deliverables/Tank-Arena-Classic-3.0.0-Source.tar.gz
+          (cd deliverables && sha256sum * > SHA256SUMS.txt)
+
+      - name: Upload complete product
+        uses: actions/upload-artifact@v4
+        with:
+          name: Tank-Arena-Classic-v3-Product
+          path: deliverables/
+          if-no-files-found: error
+          retention-days: 7
