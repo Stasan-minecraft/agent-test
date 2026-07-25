@@ -20,8 +20,11 @@ jobs:
       - name: Restore uploaded 1.1 based source
         shell: bash
         run: |
-          cat legacy-v12-split/source.part-* | base64 --decode > source.tar.xz
-          echo "b7ed288a7b317812f910ea829db895caefe49d3463d0dd5f450b47ba1ad870f5  source.tar.xz" | sha256sum -c -
+          wc -c legacy-v12/source.b64.part-*
+          cat legacy-v12/source.b64.part-* | base64 --decode > source.tar.xz
+          sha256sum source.tar.xz
+          echo "7f1a3fc56feb983d205f6c641f38b8858cbb53ac89a645d2b80670196fbf29cb  source.tar.xz" | sha256sum -c -
+          xz -t source.tar.xz
           tar -xJf source.tar.xz
           test -f tank_legacy_12/android/app/src/main/java/com/credesasq/tankarena/GameView.java
           test -f tank_legacy_12/web/public/game.js
@@ -54,6 +57,8 @@ jobs:
           node --check public/game.js
           node --check public/core.js
           node --check api/ws.js
+          node --check api/health.js
+          node --check api/test-ws.js
 
       - name: Publish web client to production asset branch
         shell: bash
