@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -63,6 +63,24 @@ jobs:
           node --check api/ws.js
           node --check api/health.js
           node --check api/test-ws.js
+
+      - name: Publish immutable web assets branch
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rm -rf /tmp/tank-arena-v4-live
+          mkdir -p /tmp/tank-arena-v4-live
+          cp -R source/public/. /tmp/tank-arena-v4-live/
+          cd /tmp/tank-arena-v4-live
+          git init
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b tank-arena-classic-v4-live
+          git add .
+          git commit -m "Publish Tank Arena Classic 4.0 web assets"
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push --force origin tank-arena-classic-v4-live
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
