@@ -19,6 +19,7 @@ jobs:
         shell: bash
         run: |
           cat classic-v41/source.b64.part-* | base64 --decode > source.tar.xz
+          echo "1e58836970f49ff437d843485b0fbae3ec968e530a96bed353d47a35e89780d1  source.tar.xz" | sha256sum -c -
           tar -xJf source.tar.xz
           mv tank-arena-v4.1 source
           test -f source/public/game.js
