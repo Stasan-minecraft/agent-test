@@ -1,0 +1,127 @@
+name: Build Tank Arena Legacy 1.2 from 1.1
+
+on:
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Restore uploaded 1.1 based source
+        shell: bash
+        run: |
+          cat legacy-v12/source.b64.part-* | base64 --decode > source.tar.xz
+          tar -xJf source.tar.xz
+          test -f tank_legacy_12/android/app/src/main/java/com/credesasq/tankarena/GameView.java
+          test -f tank_legacy_12/web/public/game.js
+          grep -q "versionName '1.2.0'" tank_legacy_12/android/app/build.gradle
+          grep -q 'VERSION="1.2.0"' tank_legacy_12/android/app/src/main/java/com/credesasq/tankarena/GameView.java
+
+      - name: Set up Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Test web physics and syntax
+        working-directory: tank_legacy_12/web
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import {VERSION,TANKS,createState,moveTank,simulateTrajectory,fire} from './lib/core.mjs';
+          assert.equal(VERSION,'1.2.0');
+          assert.equal(Object.keys(TANKS).length,6);
+          const s=createState(12345,['A','B'],['classic','tiger']);
+          const before=s.tanks[0].x;
+          moveTank(s,0,1,.1);
+          assert.ok(s.tanks[0].x>before);
+          assert.ok(s.tanks[0].fuel<42);
+          assert.ok(simulateTrajectory(s,s.tanks[0]).length>5);
+          assert.equal(fire(s,0),true);
+          console.log('Legacy 1.2 core tests passed');
+          NODE
+          node --check public/game.js
+          node --check public/core.js
+          node --check api/ws.js
+
+      - name: Publish web client to production asset branch
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rm -rf /tmp/tank-arena-live
+          mkdir -p /tmp/tank-arena-live
+          cp -R tank_legacy_12/web/public/. /tmp/tank-arena-live/
+          cd /tmp/tank-arena-live
+          git init
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b tank-arena-classic-v41-live
+          git add .
+          git commit -m "Publish Tank Arena Legacy 1.2 web client from 1.1"
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push --force origin tank-arena-classic-v41-live
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android 16 SDK
+        shell: bash
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Set up Gradle 8.13
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
+      - name: Build native Android APK and AAB
+        working-directory: tank_legacy_12/android
+        shell: bash
+        run: gradle :app:assembleRelease :app:bundleRelease --stacktrace --no-daemon
+
+      - name: Verify and package
+        shell: bash
+        run: |
+          APK="tank_legacy_12/android/app/build/outputs/apk/release/app-release.apk"
+          AAB="tank_legacy_12/android/app/build/outputs/bundle/release/app-release.aab"
+          test -s "$APK"
+          test -s "$AAB"
+          "$ANDROID_HOME/build-tools/36.0.0/aapt2" dump badging "$APK" | tee apk-badging.txt
+          grep -q "package: name='com.credesasq.tankarena.s25fix'" apk-badging.txt
+          grep -q "versionName='1.2.0'" apk-badging.txt
+          grep -q "launchable-activity:" apk-badging.txt
+          grep -q "application-icon-" apk-badging.txt
+          "$ANDROID_HOME/build-tools/36.0.0/zipalign" -c -P 16 -v 4 "$APK"
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs "$APK" | tee apk-signature.txt
+          mkdir -p deliverables
+          cp "$APK" deliverables/Tank-Arena-Legacy-1.2.0-from-1.1.apk
+          cp "$AAB" deliverables/Tank-Arena-Legacy-1.2.0-from-1.1.aab
+          cp source.tar.xz deliverables/Tank-Arena-Legacy-1.2.0-Source.tar.xz
+          cp apk-badging.txt apk-signature.txt deliverables/
+          (cd deliverables && sha256sum * > SHA256SUMS.txt)
+
+      - name: Upload product
+        uses: actions/upload-artifact@v4
+        with:
+          name: Tank-Arena-Legacy-1.2.0-Product
+          path: deliverables/
+          if-no-files-found: error
+          retention-days: 7
