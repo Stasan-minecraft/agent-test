@@ -20,7 +20,8 @@ jobs:
       - name: Restore uploaded 1.1 based source
         shell: bash
         run: |
-          cat legacy-v12/source.b64.part-* | base64 --decode > source.tar.xz
+          cat legacy-v12-split/source.part-* | base64 --decode > source.tar.xz
+          echo "b7ed288a7b317812f910ea829db895caefe49d3463d0dd5f450b47ba1ad870f5  source.tar.xz" | sha256sum -c -
           tar -xJf source.tar.xz
           test -f tank_legacy_12/android/app/src/main/java/com/credesasq/tankarena/GameView.java
           test -f tank_legacy_12/web/public/game.js
