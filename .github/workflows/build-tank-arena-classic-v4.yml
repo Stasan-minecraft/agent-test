@@ -1,0 +1,119 @@
+name: Build Tank Arena Classic v4
+
+on:
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Restore complete source
+        shell: bash
+        run: |
+          cat classic-v4/source.b64.part-* | base64 --decode > source.tar.xz
+          tar -xJf source.tar.xz
+          mv ta4work source
+          test -f source/android/app/src/main/java/com/credesasq/tankarena/GameView.java
+          test -f source/public/game.js
+
+      - name: Set up Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Test game core and web/server syntax
+        working-directory: source
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import { VERSION,TANKS,createState,moveTank,simulateTrajectory,fire,validateAction,packState,unpackState } from './lib/core.mjs';
+          assert.equal(VERSION, '4.0.0');
+          assert.equal(Object.keys(TANKS).length, 6);
+          const a=createState(12345,['A','B'],['tiger','storm']);
+          const b=createState(12345,['A','B'],['tiger','storm']);
+          assert.deepEqual(a.terrain,b.terrain);
+          assert.equal(a.tanks[0].tankType,'tiger');
+          assert.equal(a.tanks[0].weapon,'heavy');
+          assert.equal(a.tanks[1].weapon,'cluster');
+          assert.equal('airdrop' in a,false);
+          assert.equal('ammo' in a.tanks[0],false);
+          const x=a.tanks[0].x, fuel=a.tanks[0].fuel;
+          assert.equal(moveTank(a,0,1,0.1),true);
+          assert.ok(a.tanks[0].x>x && a.tanks[0].fuel<fuel);
+          assert.ok(simulateTrajectory(a,a.tanks[0]).length>5);
+          assert.equal(validateAction(a,1,{type:'fire'}),false);
+          assert.equal(fire(a,0),true);
+          const restored=unpackState(packState(a));
+          assert.equal(restored.version,'4.0.0');
+          console.log('Tank Arena Classic v4 core tests passed');
+          NODE
+          node --check public/game.js
+          node --check public/core.js
+          node --check api/ws.js
+          node --check api/health.js
+          node --check api/test-ws.js
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android 16 SDK
+        shell: bash
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Set up Gradle 8.13
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
+      - name: Build native APK and Play Store AAB
+        working-directory: source/android
+        shell: bash
+        run: gradle :app:assembleRelease :app:bundleRelease --stacktrace --no-daemon
+
+      - name: Verify Android package
+        shell: bash
+        run: |
+          APK="source/android/app/build/outputs/apk/release/app-release.apk"
+          AAB="source/android/app/build/outputs/bundle/release/app-release.aab"
+          test -s "$APK"
+          test -s "$AAB"
+          "$ANDROID_HOME/build-tools/36.0.0/aapt2" dump badging "$APK" | tee apk-badging.txt
+          grep -q "package: name='com.credesasq.tankarena'" apk-badging.txt
+          grep -q "versionName='4.0.0'" apk-badging.txt
+          grep -q "launchable-activity:" apk-badging.txt
+          grep -q "application-icon-" apk-badging.txt
+          "$ANDROID_HOME/build-tools/36.0.0/zipalign" -c -P 16 -v 4 "$APK"
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs "$APK" | tee apk-signature.txt
+          mkdir -p deliverables
+          cp "$APK" deliverables/Tank-Arena-Classic-4.0.0.apk
+          cp "$AAB" deliverables/Tank-Arena-Classic-4.0.0.aab
+          cp source.tar.xz deliverables/Tank-Arena-Classic-4.0.0-Source.tar.xz
+          cp apk-badging.txt apk-signature.txt deliverables/
+          (cd deliverables && sha256sum * > SHA256SUMS.txt)
+
+      - name: Upload complete product
+        uses: actions/upload-artifact@v4
+        with:
+          name: Tank-Arena-Classic-v4-Product
+          path: deliverables/
+          if-no-files-found: error
+          retention-days: 7
