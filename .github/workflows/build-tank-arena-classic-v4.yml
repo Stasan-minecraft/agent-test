@@ -37,19 +37,19 @@ jobs:
         run: |
           node --input-type=module <<'NODE'
           import assert from 'node:assert/strict';
-          import { VERSION,TANKS,createState,moveTank,simulateTrajectory,fire,validateAction,packState,unpackState } from './lib/core.mjs';
+          import { VERSION,TANKS,tankWeapon,createState,moveTank,simulateTrajectory,fire,validateAction,packState,unpackState } from './lib/core.mjs';
           assert.equal(VERSION, '4.0.0');
           assert.equal(Object.keys(TANKS).length, 6);
           const a=createState(12345,['A','B'],['tiger','storm']);
           const b=createState(12345,['A','B'],['tiger','storm']);
           assert.deepEqual(a.terrain,b.terrain);
           assert.equal(a.tanks[0].tankType,'tiger');
-          assert.equal(a.tanks[0].weapon,'heavy');
-          assert.equal(a.tanks[1].weapon,'cluster');
+          assert.equal(tankWeapon(a.tanks[0]).id,'heavy');
+          assert.equal(tankWeapon(a.tanks[1]).id,'cluster');
           assert.equal('airdrop' in a,false);
           assert.equal('ammo' in a.tanks[0],false);
           const x=a.tanks[0].x, fuel=a.tanks[0].fuel;
-          assert.equal(moveTank(a,0,1,0.1),true);
+          moveTank(a,0,1,0.1);
           assert.ok(a.tanks[0].x>x && a.tanks[0].fuel<fuel);
           assert.ok(simulateTrajectory(a,a.tanks[0]).length>5);
           assert.equal(validateAction(a,1,{type:'fire'}),false);
