@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+  <meta name="theme-color" content="#4e8fd6" />
+  <meta name="description" content="Tank Arena Classic — artillery game for Android, PC and browser." />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/styles.css" />
+  <title>Tank Arena Classic</title>
+</head>
+<body>
+<div id="app">
+  <section id="menu" class="screen active menu-scene">
+    <div class="menu-cloud c1"></div><div class="menu-cloud c2"></div>
+    <div class="menu-mountains back"></div><div class="menu-mountains front"></div><div class="menu-hill"></div>
+    <main class="classic-menu">
+      <div class="logo-badge">
+        <span class="logo-kicker">CREDESASQ GAMES</span>
+        <h1>TANK</h1><h2>ARENA</h2>
+        <p data-i18n="battleBegins">БИТВА ПОЧИНАЄТЬСЯ</p>
+      </div>
+      <label class="nick-label"><span data-i18n="playerName">ІМ’Я ГРАВЦЯ</span><input id="nickname" maxlength="16" autocomplete="nickname" placeholder="CREDESASQ" /></label>
+      <button id="playBtn" class="classic-btn orange"><span>▶</span> <b data-i18n="play">ГРАТИ</b></button>
+      <button id="multiBtn" class="classic-btn purple"><span>🌐</span> <b data-i18n="multiplayer">МУЛЬТИПЛЕЄР</b></button>
+      <button id="garageBtn" class="classic-btn blue"><span>▣</span> <b data-i18n="garage">ГАРАЖ</b></button>
+      <button id="settingsBtn" class="classic-btn dark"><span>⚙</span> <b data-i18n="settings">НАЛАШТУВАННЯ</b></button>
+      <div class="menu-bottom-row">
+        <button id="helpBtn" class="round-help">?</button>
+        <label class="language-pill"><span>🌐</span><select id="languageSelect" aria-label="Language"></select></label>
+      </div>
+      <small class="version">CLASSIC 4.0.0 • WEB CANVAS</small>
+    </main>
+    <div class="menu-tank tank-left" aria-hidden="true"><i></i><b></b><span></span></div>
+    <div class="menu-tank tank-right" aria-hidden="true"><i></i><b></b><span></span></div>
+  </section>
+
+  <section id="mode" class="screen menu-scene sub-screen">
+    <div class="menu-mountains back"></div><div class="menu-mountains front"></div><div class="menu-hill"></div>
+    <main class="panel classic-panel">
+      <button class="back-btn" data-back="menu">←</button>
+      <h2 data-i18n="chooseBattle">ВИБЕРИ БІЙ</h2>
+      <p data-i18n="classicPromise">Та сама перша Tank Arena, лише краще.</p>
+      <button id="easyBtn" class="classic-btn blue">🤖 <b data-i18n="easyBot">ЛЕГКИЙ БОТ</b></button>
+      <button id="normalBtn" class="classic-btn orange">🎯 <b data-i18n="normalBot">НОРМАЛЬНИЙ БОТ</b></button>
+      <button id="hardBtn" class="classic-btn red">🔥 <b data-i18n="hardBot">СКЛАДНИЙ БОТ</b></button>
+    </main>
+  </section>
+
+  <section id="multiplayer" class="screen menu-scene sub-screen">
+    <div class="menu-mountains back"></div><div class="menu-mountains front"></div><div class="menu-hill"></div>
+    <main class="panel classic-panel">
+      <button class="back-btn" data-back="menu">←</button>
+      <h2 data-i18n="multiplayer">МУЛЬТИПЛЕЄР</h2>
+      <p data-i18n="crossplayText">Android ↔ браузер ↔ ПК. Одна кімната на всіх пристроях.</p>
+      <button id="createBtn" class="classic-btn orange">＋ <b data-i18n="createRoom">СТВОРИТИ КІМНАТУ</b></button>
+      <div class="join-box"><input id="roomCode" maxlength="6" placeholder="ROOM CODE" autocomplete="off" /><button id="joinBtn" class="classic-btn purple"><b data-i18n="join">УВІЙТИ</b></button></div>
+      <div class="server-note"><i id="serverDot"></i><span id="serverText" data-i18n="serverChecking">Перевірка сервера…</span></div>
+    </main>
+  </section>
+
+  <section id="lobby" class="screen menu-scene sub-screen">
+    <div class="menu-mountains back"></div><div class="menu-mountains front"></div><div class="menu-hill"></div>
+    <main class="panel classic-panel lobby-panel">
+      <button id="leaveLobbyBtn" class="back-btn">←</button>
+      <h2><span data-i18n="room">КІМНАТА</span> <strong id="lobbyCode">------</strong></h2>
+      <p id="lobbyStatus">...</p>
+      <div class="player-row">
+        <div class="player-card blue-card"><div class="mini-tank blue-mini"></div><b id="hostName">...</b><small data-i18n="playerOne">ГРАВЕЦЬ 1</small><span id="hostState">...</span></div>
+        <div class="versus">VS</div>
+        <div class="player-card red-card"><div class="mini-tank red-mini"></div><b id="guestName">...</b><small data-i18n="playerTwo">ГРАВЕЦЬ 2</small><span id="guestState">...</span></div>
+      </div>
+      <div class="lobby-actions"><button id="copyCodeBtn" class="classic-btn blue"><b data-i18n="copyCode">КОПІЮВАТИ КОД</b></button><button id="readyBtn" class="classic-btn orange" disabled><b data-i18n="ready">Я ГОТОВИЙ</b></button></div>
+      <p class="tiny" data-i18n="reconnectNote">Після короткого обриву гра перепідключиться автоматично.</p>
+    </main>
+  </section>
+
+  <section id="garage" class="screen menu-scene sub-screen">
+    <div class="menu-mountains back"></div><div class="menu-mountains front"></div><div class="menu-hill"></div>
+    <main class="panel classic-panel wide-panel">
+      <button class="back-btn" data-back="menu">←</button>
+      <h2 data-i18n="garage">ГАРАЖ</h2>
+      <p data-i18n="garageText">Кожен танк має один власний унікальний снаряд. Міняти його під час бою не можна.</p>
+      <div id="tankCards" class="tank-cards"></div>
+    </main>
+  </section>
+
+  <section id="settings" class="screen menu-scene sub-screen">
+    <div class="menu-mountains back"></div><div class="menu-mountains front"></div><div class="menu-hill"></div>
+    <main class="panel classic-panel settings-panel">
+      <button class="back-btn" data-back="menu">←</button>
+      <h2 data-i18n="settings">НАЛАШТУВАННЯ</h2>
+      <label><span data-i18n="language">МОВА</span><select id="settingsLanguageSelect"></select></label>
+      <label><span data-i18n="sounds">ЗВУКИ</span><input id="soundToggle" type="checkbox" /></label>
+      <label><span data-i18n="vibration">ВІБРАЦІЯ</span><input id="vibrationToggle" type="checkbox" /></label>
+      <label><span data-i18n="highContrast">КОНТРАСТНА ТРАЄКТОРІЯ</span><input id="contrastToggle" type="checkbox" /></label>
+      <label><span data-i18n="reducedMotion">МЕНШЕ АНІМАЦІЙ</span><input id="motionToggle" type="checkbox" /></label>
+      <label><span data-i18n="quality">ЯКІСТЬ</span><select id="qualitySelect"><option value="low">LOW</option><option value="medium">MEDIUM</option><option value="high">HIGH</option></select></label>
+    </main>
+  </section>
+
+  <section id="game" class="screen game-screen">
+    <canvas id="gameCanvas" width="1600" height="900"></canvas>
+    <div id="rotateHint"><b>↻</b><span data-i18n="rotate">ПОВЕРНІТЬ ТЕЛЕФОН ГОРИЗОНТАЛЬНО</span></div>
+    <div class="battle-top">
+      <div class="health-card player"><div class="health-line"><b id="p1Name">YOU</b><span id="p1HpText">100 HP</span></div><div class="hp-track"><i id="p1Hp"></i></div><small id="p1TankName">CLASSIC</small></div>
+      <div class="wind-card"><b id="turnLabel">YOUR TURN</b><span id="windLabel">WIND → 4.4</span><strong id="timerLabel">35</strong></div>
+      <div class="health-card enemy"><div class="health-line"><b id="p2Name">AI</b><span id="p2HpText">100 HP</span></div><div class="hp-track"><i id="p2Hp"></i></div><small id="p2TankName">CLASSIC</small></div>
+      <button id="pauseBtn" class="menu-button" data-i18n="menu">МЕНЮ</button>
+    </div>
+    <div id="toast" class="toast"></div>
+    <div id="combatLog" class="combat-log"></div>
+    <div class="battle-bottom">
+      <div class="control-block move-control">
+        <div class="control-title"><span data-i18n="move">РУХ</span><small><span data-i18n="fuel">ПАЛЬНЕ</span> <b id="fuelText">42</b></small></div>
+        <div class="fuel"><i id="fuelBar"></i></div>
+        <div class="pair"><button id="moveLeft">◀</button><button id="moveRight">▶</button></div>
+      </div>
+      <div class="control-block angle-control"><div class="control-title"><span data-i18n="angle">КУТ</span> <b id="angleOut">45°</b></div><div class="pair"><button id="angleMinus">−</button><button id="anglePlus">＋</button></div></div>
+      <button id="fireBtn" class="fire-btn"><span>🔥</span><b data-i18n="fire">ВОГОНЬ!</b></button>
+      <div class="control-block power-control"><div class="control-title"><span data-i18n="power">СИЛА</span> <b id="powerOut">62</b></div><div class="pair"><button id="powerMinus">−</button><button id="powerPlus">＋</button></div></div>
+    </div>
+    <div id="pausePanel" class="pause-overlay hidden"><div class="panel classic-panel"><h2 data-i18n="pause">ПАУЗА</h2><button id="resumeBtn" class="classic-btn orange"><b data-i18n="continue">ПРОДОВЖИТИ</b></button><button id="restartBtn" class="classic-btn blue"><b data-i18n="newBattle">НОВИЙ БІЙ</b></button><button id="exitBtn" class="classic-btn dark"><b data-i18n="exitMenu">ВИЙТИ В МЕНЮ</b></button></div></div>
+  </section>
+
+  <dialog id="helpDialog"><button class="dialog-x">×</button><h2 data-i18n="howToPlay">ЯК ГРАТИ</h2><p data-i18n="helpText">Рухайте танк ліворуч або праворуч, налаштовуйте кут і силу, а потім стріляйте. Кожен танк має власний тип снаряда.</p><p><b>PC:</b> A/D, W/S, Q/E, Space.</p></dialog>
+</div>
+<script type="module" src="/game.js"></script>
+</body>
+</html>
